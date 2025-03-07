@@ -5,7 +5,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
-dotenv.config({ path: "../../.env" });
+// dotenv.config({ path: "../../.env" });
+dotenv.config();
 
 if (!process.env.JWT_SECRET) {
   console.error("JWT_SECRET is missing");
