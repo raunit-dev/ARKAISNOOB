@@ -1,8 +1,6 @@
 import { ethers } from 'ethers';
-import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { User, Student } from '../models/index.js';
-
 dotenv.config({ path: "../../.env" });
 
 const authenticateToken = (req, res, next) => {
@@ -21,17 +19,25 @@ export const mintPortfolio = [
     if (req.user.role !== 'College') return res.status(403).json({ error: 'Only Colleges can mint' });
     const { studentAddress, metadata, tokenId } = req.body;
     try {
-      // Encode metadata as base64 to store on-chain
-      const metadataString = JSON.stringify(JSON.parse(metadata));
-      const tokenURI = `data:application/json;base64,${Buffer.from(metadataString).toString('base64')}`;
+      const metadataObj = JSON.parse(metadata);
+      const tokenURI = `data:application/json;base64,${Buffer.from(metadata).toString('base64')}`;
       
       const studentUser = await User.findOne({ wallet_address: studentAddress });
       if (!studentUser || studentUser.roleModel !== 'Student') return res.status(404).json({ error: 'Student not found' });
+      
+      // Update student data with AI-related metadata
       await Student.findOneAndUpdate(
         { _id: studentUser.role },
-        { portfolio_token_id: tokenId },
-        { upsert: true }
+        {
+          portfolio_token_id: tokenId,
+          course_progress: metadataObj.course_progress || { "Data structures": 0, "Deep learning": 0, "Blockchain": 0 },
+          quiz_scores: metadataObj.quiz_scores || { "Data structures": [], "Deep learning": [], "Blockchain": [] },
+          grades: metadataObj.grades || { "Data structures": "", "Deep learning": "", "Blockchain": "" },
+          projects: metadataObj.projects || { "Data structures": "Not Started", "Deep learning": "Not Started", "Blockchain": "Not Started" }
+        },
+        { upsert: true, new: true }
       );
+
       res.json({ tokenId, tokenURI });
     } catch (error) {
       res.status(500).json({ error: error.message });
@@ -45,7 +51,6 @@ export const mintBadge = [
     if (req.user.role !== 'College') return res.status(403).json({ error: 'Only Colleges can mint' });
     const { studentAddress, badgeId, metadata } = req.body;
     try {
-      // Encode metadata as base64 to store on-chain
       const metadataString = JSON.stringify(JSON.parse(metadata));
       const metadataURI = `data:application/json;base64,${Buffer.from(metadataString).toString('base64')}`;
       
@@ -70,7 +75,11 @@ export const getNFTs = [
       if (!user || user.roleModel !== 'Student') return res.status(404).json({ error: 'Student not found' });
       res.json({
         portfolio: user.role.portfolio_token_id ? { tokenId: user.role.portfolio_token_id } : null,
-        badges: user.role.badges
+        badges: user.role.badges,
+        course_progress: user.role.course_progress,
+        quiz_scores: user.role.quiz_scores,
+        grades: user.role.grades,
+        projects: user.role.projects
       });
     } catch (error) {
       res.status(500).json({ error: error.message });
