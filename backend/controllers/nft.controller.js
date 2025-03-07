@@ -2,6 +2,7 @@ import { ethers } from 'ethers';
 import jwt from 'jsonwebtoken';
 import { User, Student } from '../models/index.js';
 
+// Middleware to authenticate token
 const authenticateToken = (req, res, next) => {
   const token = req.headers['authorization']?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token provided' });
@@ -12,81 +13,133 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+// Mint a Portfolio NFT
 export const mintPortfolio = [
   authenticateToken,
   async (req, res) => {
     if (req.user.role !== 'College') return res.status(403).json({ error: 'Only Colleges can mint' });
-    const { studentAddress, metadata, tokenId, name, degree, completionDate } = req.body;
+
+    const { studentAddress, tokenId, name, degree, completionDate, metadata = '{}'} = req.body; // Default empty metadata
+    console.log('Mint Portfolio Request:', req.body);
+
     try {
-      const metadataObj = JSON.parse(metadata);
-      const tokenURI = `data:application/json;base64,${Buffer.from(JSON.stringify(metadataObj)).toString('base64')}`;
-      
-      const studentUser = await User.findOne({ wallet_address: studentAddress });
-      if (!studentUser || studentUser.roleModel !== 'Student') return res.status(404).json({ error: 'Student not found' });
-      
+      // Parse metadata with fallback
+      let metadataObj;
+      try {
+        metadataObj = JSON.parse(metadata);
+      } catch (parseError) {
+        return res.status(400).json({ error: 'Invalid metadata format: ' + parseError.message });
+      }
+
+      // Generate a mock tokenURI (replace with IPFS in production)
+      const tokenURI = `ipfs://mock-hash/portfolio/${tokenId}`;
+      metadataObj.tokenURI = tokenURI;
+
+      // Find student
+      const studentUser = await User.findOne({ wallet_address: studentAddress.toLowerCase() });
+      if (!studentUser || studentUser.roleModel !== 'Student') {
+        return res.status(404).json({ error: 'Student not found' });
+      }
+
       const student = await Student.findById(studentUser.role);
+      if (!student) return res.status(404).json({ error: 'Student record not found' });
+
+      // Update certificates (ensure schema supports this)
+      student.certificates = student.certificates || []; // Initialize if undefined
       student.certificates.push({
         token_id: tokenId,
         name,
         degree,
         completion_date: new Date(completionDate),
-        metadata_uri: tokenURI
+        metadata_uri: tokenURI,
       });
       await student.save();
+      console.log('Portfolio minted successfully for student:', studentUser.wallet_address);
 
-      res.json({ tokenId, tokenURI });
+      res.status(200).json({ tokenId, tokenURI, metadata: metadataObj });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error('Mint Portfolio Error:', error);
+      res.status(500).json({ error: 'Internal server error: ' + error.message });
     }
-  }
+  },
 ];
 
+// Mint a Badge NFT
 export const mintBadge = [
   authenticateToken,
   async (req, res) => {
     if (req.user.role !== 'College') return res.status(403).json({ error: 'Only Colleges can mint' });
-    const { studentAddress, badgeId, metadata, achievement } = req.body; // Added achievement
+
+    const { studentAddress, badgeId, metadata, achievement } = req.body;
+
+    // Validate required fields
+    if (!studentAddress || !badgeId || !metadata || !achievement) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
     try {
-      const metadataObj = JSON.parse(metadata);
-      const metadataURI = `data:application/json;base64,${Buffer.from(JSON.stringify(metadataObj)).toString('base64')}`;
-      
-      const studentUser = await User.findOne({ wallet_address: studentAddress });
-      if (!studentUser || studentUser.roleModel !== 'Student') return res.status(404).json({ error: 'Student not found' });
+      // Parse metadata (with fallback to empty object if invalid)
+      let metadataObj;
+      try {
+        metadataObj = JSON.parse(metadata);
+      } catch (parseError) {
+        return res.status(400).json({ error: 'Invalid metadata format' });
+      }
+
+      // Generate a mock metadataURI (replace with actual IPFS upload in production)
+      const metadataURI = `ipfs://<mock-hash>/badge/${badgeId}`; // Replace with real IPFS logic
+      metadataObj.metadataURI = metadataURI;
+
+      // Find the student
+      const studentUser = await User.findOne({ wallet_address: studentAddress.toLowerCase() });
+      if (!studentUser || studentUser.roleModel !== 'Student') {
+        return res.status(404).json({ error: 'Student not found' });
+      }
+
       const student = await Student.findById(studentUser.role);
+      if (!student) return res.status(404).json({ error: 'Student record not found' });
+
+      // Update student record
       student.badges.push({
         badge_token_id: badgeId,
         metadata_uri: metadataURI,
-        achievement // e.g., "Completed Data Structures"
+        achievement,
       });
       await student.save();
-      res.json({ badgeId, metadataURI });
+
+      res.status(200).json({ badgeId, metadataURI, metadata: metadataObj });
     } catch (error) {
-      res.status(500).json({ error: error.message });
+      console.error('Mint Badge Error:', error);
+      res.status(500).json({ error: 'Internal server error: ' + error.message });
     }
-  }
+  },
 ];
 
+// Get NFTs for a student
 export const getNFTs = [
   authenticateToken,
   async (req, res) => {
     const { wallet } = req.params;
     try {
-      const user = await User.findOne({ wallet_address: wallet }).populate('role');
-      if (!user || user.roleModel !== 'Student') return res.status(404).json({ error: 'Student not found' });
+      const user = await User.findOne({ wallet_address: wallet.toLowerCase() }).populate('role');
+      if (!user || user.roleModel !== 'Student') {
+        return res.status(404).json({ error: 'Student not found' });
+      }
       res.json({
         certificates: user.role.certificates,
         badges: user.role.badges,
-        course_progress: user.role.course_progress,
-        quiz_scores: user.role.quiz_scores,
-        grades: user.role.grades,
-        projects: user.role.projects
+        course_progress: user.role.course_progress || {},
+        quiz_scores: user.role.quiz_scores || {},
+        grades: user.role.grades || {},
+        projects: user.role.projects || {},
       });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
-  }
+  },
 ];
 
+// Verify an NFT
 export const verifyNFT = async (req, res) => {
   const { type, id, address } = req.params;
   const provider = new ethers.JsonRpcProvider('https://open-campus-codex-sepolia.drpc.org');
@@ -112,6 +165,6 @@ export const verifyNFT = async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ error: error.message });
-    console.error(error);
+    console.error('Verify NFT Error:', error);
   }
 };
