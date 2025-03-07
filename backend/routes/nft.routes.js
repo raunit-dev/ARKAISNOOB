@@ -1,10 +1,11 @@
-const express = require('express');
+import express from 'express';
+import nftController from '../controllers/nft.controller.js';
+
 const router = express.Router();
-const nftController = require('../controllers/nftController');
 
 router.post('/mintPortfolio', nftController.mintPortfolio);
-router.post('/mintBadge', nftController.mintBadge); // Ensure this line exists
+router.post('/mintBadge', nftController.mintBadge);
 router.get('/getNFTs/:wallet', nftController.getNFTs);
 router.get('/verify/:type/:id/:address', nftController.verifyNFT);
 
-module.exports = router;
+export const nftRoutes = router;
