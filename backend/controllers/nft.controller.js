@@ -1,7 +1,6 @@
 import { ethers } from 'ethers';
-import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
 import { User, Student } from '../models/index.js';
-dotenv.config({ path: "../../.env" });
 
 const authenticateToken = (req, res, next) => {
   const token = req.headers['authorization']?.split(' ')[1];
@@ -17,26 +16,23 @@ export const mintPortfolio = [
   authenticateToken,
   async (req, res) => {
     if (req.user.role !== 'College') return res.status(403).json({ error: 'Only Colleges can mint' });
-    const { studentAddress, metadata, tokenId } = req.body;
+    const { studentAddress, metadata, tokenId, name, degree, completionDate } = req.body;
     try {
       const metadataObj = JSON.parse(metadata);
-      const tokenURI = `data:application/json;base64,${Buffer.from(metadata).toString('base64')}`;
+      const tokenURI = `data:application/json;base64,${Buffer.from(JSON.stringify(metadataObj)).toString('base64')}`;
       
       const studentUser = await User.findOne({ wallet_address: studentAddress });
       if (!studentUser || studentUser.roleModel !== 'Student') return res.status(404).json({ error: 'Student not found' });
       
-      // Update student data with AI-related metadata
-      await Student.findOneAndUpdate(
-        { _id: studentUser.role },
-        {
-          portfolio_token_id: tokenId,
-          course_progress: metadataObj.course_progress || { "Data structures": 0, "Deep learning": 0, "Blockchain": 0 },
-          quiz_scores: metadataObj.quiz_scores || { "Data structures": [], "Deep learning": [], "Blockchain": [] },
-          grades: metadataObj.grades || { "Data structures": "", "Deep learning": "", "Blockchain": "" },
-          projects: metadataObj.projects || { "Data structures": "Not Started", "Deep learning": "Not Started", "Blockchain": "Not Started" }
-        },
-        { upsert: true, new: true }
-      );
+      const student = await Student.findById(studentUser.role);
+      student.certificates.push({
+        token_id: tokenId,
+        name,
+        degree,
+        completion_date: new Date(completionDate),
+        metadata_uri: tokenURI
+      });
+      await student.save();
 
       res.json({ tokenId, tokenURI });
     } catch (error) {
@@ -49,15 +45,19 @@ export const mintBadge = [
   authenticateToken,
   async (req, res) => {
     if (req.user.role !== 'College') return res.status(403).json({ error: 'Only Colleges can mint' });
-    const { studentAddress, badgeId, metadata } = req.body;
+    const { studentAddress, badgeId, metadata, achievement } = req.body; // Added achievement
     try {
-      const metadataString = JSON.stringify(JSON.parse(metadata));
-      const metadataURI = `data:application/json;base64,${Buffer.from(metadataString).toString('base64')}`;
+      const metadataObj = JSON.parse(metadata);
+      const metadataURI = `data:application/json;base64,${Buffer.from(JSON.stringify(metadataObj)).toString('base64')}`;
       
       const studentUser = await User.findOne({ wallet_address: studentAddress });
       if (!studentUser || studentUser.roleModel !== 'Student') return res.status(404).json({ error: 'Student not found' });
       const student = await Student.findById(studentUser.role);
-      student.badges.push({ badge_token_id: badgeId, metadata_uri: metadataURI });
+      student.badges.push({
+        badge_token_id: badgeId,
+        metadata_uri: metadataURI,
+        achievement // e.g., "Completed Data Structures"
+      });
       await student.save();
       res.json({ badgeId, metadataURI });
     } catch (error) {
@@ -74,7 +74,7 @@ export const getNFTs = [
       const user = await User.findOne({ wallet_address: wallet }).populate('role');
       if (!user || user.roleModel !== 'Student') return res.status(404).json({ error: 'Student not found' });
       res.json({
-        portfolio: user.role.portfolio_token_id ? { tokenId: user.role.portfolio_token_id } : null,
+        certificates: user.role.certificates,
         badges: user.role.badges,
         course_progress: user.role.course_progress,
         quiz_scores: user.role.quiz_scores,
