@@ -58,12 +58,10 @@ export const registerUser = async (req, res) => {
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    // First, find the user without population
     const existingUser = await User.findOne({ email });
     if (!existingUser) {
       return res.status(404).json({ message: "User does not exist" });
     }
-    // Populate the role field using the roleModel from the found user
     const populatedUser = await User.findOne({ email }).populate({
       path: "role",
       model: existingUser.roleModel,

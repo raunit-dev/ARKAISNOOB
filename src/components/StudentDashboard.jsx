@@ -1,9 +1,16 @@
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function StudentDashboard({ account, onGetNFTs, portfolioData, badgeData, aiSuggestion }) {
+  const navigate = useNavigate();
+
+  const logout = () => {
+    navigate('/login');
+  };
+
   return (
     <div className="section">
       <h2>Student Dashboard</h2>
+      <button onClick={logout}>Logout</button>
       <button onClick={onGetNFTs}>Get My NFTs</button>
       {portfolioData && (
         <div>

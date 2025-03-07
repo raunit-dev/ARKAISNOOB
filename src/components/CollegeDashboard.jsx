@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 function CollegeDashboard({ onMintPortfolio, onMintBadge }) {
   const [studentAddressPortfolio, setStudentAddressPortfolio] = useState('');
@@ -8,17 +9,10 @@ function CollegeDashboard({ onMintPortfolio, onMintBadge }) {
   const [degree, setDegree] = useState('');
   const [completionDate, setCompletionDate] = useState('');
   const [achievement, setAchievement] = useState('');
+  const navigate = useNavigate();
 
   const handleMintPortfolio = () => {
-    const metadata = JSON.stringify({
-      name: "Portfolio",
-      description: "Edu record",
-      course_progress: { "Data structures": 80, "Deep learning": 40, "Blockchain": 20 },
-      quiz_scores: { "Data structures": [70, 75], "Deep learning": [40, 50], "Blockchain": [30, 20] },
-      grades: { "Data structures": "B", "Deep learning": "D", "Blockchain": "F" },
-      projects: { "Data structures": "Completed", "Deep learning": "In Progress", "Blockchain": "Not Started" }
-    });
-    onMintPortfolio({ studentAddress: studentAddressPortfolio, metadata, tokenId: 1, name, degree, completionDate });
+    onMintPortfolio({ studentAddress: studentAddressPortfolio, name, degree, completionDate });
   };
 
   const handleMintBadge = () => {
@@ -26,9 +20,14 @@ function CollegeDashboard({ onMintPortfolio, onMintBadge }) {
     onMintBadge({ studentAddress: studentAddressBadge, badgeId, metadata, achievement });
   };
 
+  const logout = () => {
+    navigate('/login');
+  };
+
   return (
     <div className="section">
       <h2>College Dashboard</h2>
+      <button onClick={logout}>Logout</button>
       <h3>Mint Portfolio</h3>
       <input value={studentAddressPortfolio} onChange={(e) => setStudentAddressPortfolio(e.target.value)} placeholder="Student Address" />
       <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Student Name" />
