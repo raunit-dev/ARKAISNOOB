@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { link } from "../../BaseLink";
+
 const LoginSignup = () => {
   const [activeForm, setActiveForm] = useState(null);
   const [formData, setFormData] = useState({
@@ -8,7 +9,7 @@ const LoginSignup = () => {
     email: "",
     password: "",
     role: "Student",
-    wallet_address: "123456789876543215",
+    wallet_address: "",
   });
 
   useEffect(() => {
@@ -17,10 +18,20 @@ const LoginSignup = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: type === "checkbox" ? (checked ? "College" : "Student") : value,
-    }));
+
+    setFormData((prevData) => {
+      if (name === "role") {
+        return {
+          ...prevData,
+          role: checked ? "College" : "Student",
+          wallet_address: checked ? "" : "123456789876543215", // Remove wallet address if College is selected
+        };
+      }
+      return {
+        ...prevData,
+        [name]: value,
+      };
+    });
   };
 
   const handleAuth = async () => {
@@ -39,6 +50,11 @@ const LoginSignup = () => {
       if (response.data.user.roleModel === "College") {
         window.location.href = "/college";
       }
+
+      if (response.data.user.roleModel === "Student") {
+        window.location.href ="/student"
+      }
+
       localStorage.setItem("token", response.data.token);
     } catch (error) {
       console.error("Error:", error.response?.data || error.message);
@@ -128,18 +144,30 @@ const LoginSignup = () => {
                 onChange={handleChange}
                 className="w-80 p-3 mb-3 bg-gray-700 rounded-lg border border-gray-600"
               />
-              <div className="flex flex-col items-start mb-4">
-                <label className="flex items-center mb-2">
-                  <input
-                    type="checkbox"
-                    name="role"
-                    checked={formData.role === "College"}
-                    onChange={handleChange}
-                    className="mr-2"
-                  />
-                  Sign Up as College
-                </label>
+
+              {/* Wallet Address (Visible only for Students) */}
+              {formData.role === "Student" && (
+                <input
+                  type="text"
+                  name="wallet_address"
+                  placeholder="Wallet Address"
+                  value={formData.wallet_address}
+                  onChange={handleChange}
+                  className="w-80 p-3 mb-3 bg-gray-700 rounded-lg border border-gray-600"
+                />
+              )}
+
+              <div className="flex items-center mb-4">
+                <input
+                  type="checkbox"
+                  name="role"
+                  checked={formData.role === "College"}
+                  onChange={handleChange}
+                  className="mr-2"
+                />
+                <label className="text-sm">Sign Up as College</label>
               </div>
+
               <button
                 onClick={handleAuth}
                 className="bg-purple-600 px-6 py-3 rounded-lg text-lg font-semibold hover:bg-purple-700"
