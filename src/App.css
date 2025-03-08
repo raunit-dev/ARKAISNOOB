@@ -1,4 +1,4 @@
-body {
+/* body {
   background: #1a1a1a;
   color: #ffffff;
   margin: 0;
@@ -63,11 +63,11 @@ button:hover {
 p {
   margin: 5px 0;
   color: #ccc;
-}
+} */
 
 /* Responsive Design */
-@media (max-width: 600px) {
-  .app {
+/* @media (max-width: 600px) { */
+  /* .app {
     padding: 10px;
   }
 
@@ -87,4 +87,4 @@ p {
     padding: 10px 16px;
     width: 100%;
   }
-}
+} */
