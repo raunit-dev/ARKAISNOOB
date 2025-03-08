@@ -1,37 +1,36 @@
 import React, { useState } from "react";
 import { FaBook, FaChartBar, FaProjectDiagram, FaUser, FaUniversity, FaSearch, FaEdit } from "react-icons/fa";
+import axios from "axios";
+import { link } from "../../BaseLink";
 
 const CollegeDashboard = () => {
   const [email, setEmail] = useState("");
   const [student, setStudent] = useState(null);
   const [editable, setEditable] = useState(false);
 
-  const fetchStudentData = () => {
-    const mockData = {
-      name: "Giriraj Roy",
-      email: "roy.2004002@gmail.com",
-      course_progress: {
-        "Data Structures": 80,
-        "Deep Learning": 100,
-        "Blockchain": 20,
-      },
-      quiz_scores: {
-        "Data Structures": [80, 95],
-        "Deep Learning": [98, 85],
-        "Blockchain": [30, 20],
-      },
-      grades: {
-        "Data Structures": "A",
-        "Deep Learning": "A",
-        "Blockchain": "F",
-      },
-      projects: {
-        "Data Structures": "Completed",
-        "Deep Learning": "In Progress",
-        "Blockchain": "Not Started",
-      },
-    };
-    setStudent(mockData);
+  const fetchStudentData = async () => {
+    try {
+      const response = await axios.post(`${link}/getcollegedetails`, { s_email: email });
+      setStudent(response.data.user);
+    } catch (error) {
+      console.error("Error fetching student data:", error);
+    }
+  };
+
+  const saveStudentData = async () => {
+    try {
+      await axios.post(`${link}/editdetails`, {
+        s_email: student.email,
+        name: student.name,
+        course_progress: student.role.course_progress,
+        quiz_scores: student.role.quiz_scores,
+        grades: student.role.grades,
+        projects: student.role.projects
+      });
+      setEditable(false);
+    } catch (error) {
+      console.error("Error saving student data:", error);
+    }
   };
 
   return (
@@ -77,7 +76,7 @@ const CollegeDashboard = () => {
           </div>
 
           <Section title="Course Progress" icon={<FaBook />}>
-            {Object.entries(student.course_progress).map(([course, progress]) => (
+            {Object.entries(student.role.course_progress).map(([course, progress]) => (
               <EditableField
                 key={course}
                 label={course}
@@ -86,7 +85,13 @@ const CollegeDashboard = () => {
                 onChange={(newValue) =>
                   setStudent({
                     ...student,
-                    course_progress: { ...student.course_progress, [course]: Number(newValue) },
+                    role: {
+                      ...student.role,
+                      course_progress: {
+                        ...student.role.course_progress,
+                        [course]: Number(newValue),
+                      },
+                    },
                   })
                 }
               />
@@ -94,7 +99,7 @@ const CollegeDashboard = () => {
           </Section>
 
           <Section title="Quiz Scores" icon={<FaChartBar />}>
-            {Object.entries(student.quiz_scores).map(([course, scores]) => (
+            {Object.entries(student.role.quiz_scores).map(([course, scores]) => (
               <EditableField
                 key={course}
                 label={course}
@@ -103,7 +108,13 @@ const CollegeDashboard = () => {
                 onChange={(newValue) =>
                   setStudent({
                     ...student,
-                    quiz_scores: { ...student.quiz_scores, [course]: newValue.split(",").map(Number) },
+                    role: {
+                      ...student.role,
+                      quiz_scores: {
+                        ...student.role.quiz_scores,
+                        [course]: newValue.split(",").map(Number),
+                      },
+                    },
                   })
                 }
               />
@@ -111,35 +122,56 @@ const CollegeDashboard = () => {
           </Section>
 
           <Section title="Grades" icon={<FaBook />}>
-            {Object.entries(student.grades).map(([course, grade]) => (
+            {Object.entries(student.role.grades).map(([course, grade]) => (
               <EditableField
                 key={course}
                 label={course}
                 value={grade}
                 editable={editable}
                 onChange={(newValue) =>
-                  setStudent({ ...student, grades: { ...student.grades, [course]: newValue } })
+                  setStudent({
+                    ...student,
+                    role: {
+                      ...student.role,
+                      grades: {
+                        ...student.role.grades,
+                        [course]: newValue,
+                      },
+                    },
+                  })
                 }
               />
             ))}
           </Section>
 
           <Section title="Projects" icon={<FaProjectDiagram />}>
-            {Object.entries(student.projects).map(([course, status]) => (
+            {Object.entries(student.role.projects).map(([course, status]) => (
               <EditableField
                 key={course}
                 label={course}
                 value={status}
                 editable={editable}
                 onChange={(newValue) =>
-                  setStudent({ ...student, projects: { ...student.projects, [course]: newValue } })
+                  setStudent({
+                    ...student,
+                    role: {
+                      ...student.role,
+                      projects: {
+                        ...student.role.projects,
+                        [course]: newValue,
+                      },
+                    },
+                  })
                 }
               />
             ))}
           </Section>
 
           <button
-            onClick={() => setEditable(!editable)}
+            onClick={() => {
+              if (editable) saveStudentData();
+              else setEditable(true);
+            }}
             className="mt-4 bg-violet-500 text-white px-6 py-2 rounded-lg flex items-center hover:bg-violet-600 transition"
           >
             <FaEdit className="mr-2" /> {editable ? "Save Changes" : "Edit Details"}
@@ -175,4 +207,4 @@ const EditableField = ({ label, value, editable, onChange }) => (
   </div>
 );
 
-export default CollegeDashboard;
+export default CollegeDashboard;        
