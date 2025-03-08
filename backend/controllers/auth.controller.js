@@ -23,6 +23,7 @@ export const registerUser = async (req, res) => {
 
     // Validate secret for College role
     if (role === "College" && secret !== "RAUNITISTHEKING") {
+      console.log(secret);
       return res.status(403).json({ message: "Invalid secret key for College registration" });
     }
 
