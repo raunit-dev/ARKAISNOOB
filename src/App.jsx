@@ -4,6 +4,7 @@ import EduNFTLanding from './components/Landing/LandingPage'
 import LoginSignup from './components/Auth/AuthComp'
 import CollegeDashboard from './components/DashBoarrd/CollegeDashBoard'
 import StudentDashboard from './components/DashBoarrd/StudentDashboard'
+import GenerateCertificate from './components/CertificateGen/GenerateCert'
 const App = () => {
   return (
     <BrowserRouter>
@@ -12,6 +13,7 @@ const App = () => {
             <Route path='/auth' element={<LoginSignup />} />
             <Route path='/college' element={<CollegeDashboard/>} />
             <Route path='/student' element={<StudentDashboard/>} />
+            <Route path='/generate/:walletid' element={<GenerateCertificate/>} />
         </Routes>
     </BrowserRouter>
     )

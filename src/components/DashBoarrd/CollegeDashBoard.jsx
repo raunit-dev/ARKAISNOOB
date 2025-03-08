@@ -1,16 +1,22 @@
 import React, { useState } from "react";
-import { FaBook, FaChartBar, FaProjectDiagram, FaUser, FaUniversity, FaSearch, FaEdit } from "react-icons/fa";
+import { FaBook, FaChartBar, FaProjectDiagram, FaUser, FaUniversity, FaSearch, FaEdit, FaWallet, FaCertificate } from "react-icons/fa";
 import axios from "axios";
 import { link } from "../../BaseLink";
+import { jwtDecode } from "jwt-decode";
+import { useNavigate } from "react-router-dom";
 
 const CollegeDashboard = () => {
+    const navigate = useNavigate()
+
   const [email, setEmail] = useState("");
   const [student, setStudent] = useState(null);
+  const [collegeName, setCollegeName] = useState(jwtDecode(localStorage.getItem('token')).u_name); // State for dynamic college name
   const [editable, setEditable] = useState(false);
-
+    console.log(jwtDecode(localStorage.getItem("token")))
   const fetchStudentData = async () => {
     try {
       const response = await axios.post(`${link}/getcollegedetails`, { s_email: email });
+      console.log(response.data);
       setStudent(response.data.user);
     } catch (error) {
       console.error("Error fetching student data:", error);
@@ -25,7 +31,7 @@ const CollegeDashboard = () => {
         course_progress: student.role.course_progress,
         quiz_scores: student.role.quiz_scores,
         grades: student.role.grades,
-        projects: student.role.projects
+        projects: student.role.projects,
       });
       setEditable(false);
     } catch (error) {
@@ -35,9 +41,11 @@ const CollegeDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 flex flex-col items-center px-6 py-12">
+      {/* Dynamic College Name */}
       <h1 className="text-4xl font-bold text-violet-600 flex items-center">
-        <FaUniversity className="mr-3" /> Heritage Institute of Technology
+        <FaUniversity className="mr-3" /> {collegeName || "Loading..."}
       </h1>
+
       <div className="mt-6 flex space-x-4 bg-white p-4 rounded-lg shadow-md border border-gray-300">
         <input
           type="email"
@@ -56,22 +64,31 @@ const CollegeDashboard = () => {
 
       {student && (
         <div className="mt-6 max-w-4xl w-full bg-white p-6 rounded-xl shadow-lg border border-gray-300">
-          <div className="flex items-center space-x-4 border-b pb-4 border-gray-300">
-            <FaUser className="text-4xl text-violet-500" />
-            <div>
-              <h2 className="text-3xl font-bold">
-                {editable ? (
-                  <input
-                    type="text"
-                    value={student.name}
-                    onChange={(e) => setStudent({ ...student, name: e.target.value })}
-                    className="border rounded px-2 py-1"
-                  />
-                ) : (
-                  student.name
-                )}
-              </h2>
-              <p className="text-gray-600">{student.email}</p>
+          {/* User Info Section with Wallet Address */}
+          <div className="flex justify-between items-center border-b pb-4 border-gray-300">
+            <div className="flex items-center space-x-4">
+              <FaUser className="text-4xl text-violet-500" />
+              <div>
+                <h2 className="text-3xl font-bold">
+                  {editable ? (
+                    <input
+                      type="text"
+                      value={student.name}
+                      onChange={(e) => setStudent({ ...student, name: e.target.value })}
+                      className="border rounded px-2 py-1"
+                    />
+                  ) : (
+                    student.name
+                  )}
+                </h2>
+                <p className="text-gray-600">{student.email}</p>
+              </div>
+            </div>
+
+            {/* Wallet Address Field */}
+            <div className="flex items-center space-x-2">
+              <FaWallet className="text-xl text-violet-500" />
+              <p className="text-gray-700 font-medium">{student.wallet_address || "N/A"}</p>
             </div>
           </div>
 
@@ -176,6 +193,12 @@ const CollegeDashboard = () => {
           >
             <FaEdit className="mr-2" /> {editable ? "Save Changes" : "Edit Details"}
           </button>
+                <button
+            onClick={() => navigate(`/generate/${student.wallet_address}`)}
+            className="mt-4 bg-green-500 text-white px-6 py-2 rounded-lg flex items-center hover:bg-green-600 transition"
+          >
+            <FaCertificate className="mr-2" /> Generate Certificate
+          </button>
         </div>
       )}
     </div>
@@ -207,4 +230,4 @@ const EditableField = ({ label, value, editable, onChange }) => (
   </div>
 );
 
-export default CollegeDashboard;        
+export default CollegeDashboard;
