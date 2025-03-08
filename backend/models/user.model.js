@@ -9,4 +9,6 @@ const userSchema = new mongoose.Schema({
   roleModel: { type: String, enum: ['Student', 'College'], required: true }
 });
 
-export const User = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
+
+export {User}

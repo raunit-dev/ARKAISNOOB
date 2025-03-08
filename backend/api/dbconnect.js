@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 dotenv.config();
 
+console.log(process.env.MONGO_URI);
 if (!process.env.MONGO_URI) {
   console.error("Mongo URI is missing");
   process.exit(1);
@@ -12,6 +13,7 @@ const dbConnect = async () => {
     await mongoose.connect(process.env.MONGO_URI);
     console.log("Database connected successfully");
   } catch (error) {
+    console.log(error);
     console.log("Database connection failed (dbconnect.js)");
     console.log("exiting...");
     process.exit(1);

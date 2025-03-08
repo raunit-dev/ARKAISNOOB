@@ -1,8 +1,12 @@
 import mongoose from 'mongoose';
 
 const collegeSchema = new mongoose.Schema({
-  college_name: { type: String, required: true },
-  created_at: { type: Date, default: Date.now }
+  students: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Student',
+  }],
 });
 
-export const College = mongoose.model('College', collegeSchema);
+const College = mongoose.model('College', collegeSchema);
+
+export { College };
