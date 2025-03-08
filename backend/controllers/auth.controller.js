@@ -28,7 +28,7 @@ export const registerUser = async (req, res) => {
     }
 
     // Check for existing user
-    const existingUser = await User.findOne({ $or: [{ email }, { wallet_address }] });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "Email or wallet already in use" });
     }
@@ -63,7 +63,7 @@ export const registerUser = async (req, res) => {
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user._id, role: roleModel },
+      { userId: user._id, role: roleModel, u_name:name },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -92,7 +92,7 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
     const token = jwt.sign(
-      { userId: populatedUser._id, role: populatedUser.roleModel },
+      { userId: populatedUser._id, role: populatedUser.roleModel, u_name:populatedUser.name },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );

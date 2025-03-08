@@ -36,7 +36,8 @@ export const mintPortfolio = [
 
       // Find the student user by wallet address
       const studentUser = await User.findOne({ wallet_address: studentAddress.toLowerCase() });
-      if (!studentUser || studentUser.roleModel !== 'Student') {
+      // console.log('studentUser', studentUser)
+      if (!studentUser ) {
         return res.status(404).json({ error: 'Student not found' });
       }
 
