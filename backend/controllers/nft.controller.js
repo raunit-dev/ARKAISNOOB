@@ -55,10 +55,10 @@ export const mintPortfolio = [
       await student.save();
 
       // Mint on-chain for CertificateNFT
-      const provider = new ethers.JsonRpcProvider('https://open-campus-codex-sepolia.drpc.org');
+      const provider = new ethers.JsonRpcProvider('https://rpc.open-campus-codex.gelato.digital');
       const signer = new ethers.Wallet(process.env.COLLEGE_PRIVATE_KEY, provider);
       const certificateContract = new ethers.Contract(
-        '0x663F9d78B3767290A4A3C155eb853d5Ad34F3b9e',
+        '0x3fcC09B2D1023b031FB45317c170C0AB6eFDdaC0',
         require('../../artifacts/contracts/CertificateNFT.sol/CertificateNFT.json').abi,
         signer
       );
@@ -101,9 +101,9 @@ export const getNFTs = [
 export const verifyNFT = async (req, res) => {
   const { id, address } = req.params;
   try {
-    const provider = new ethers.JsonRpcProvider('https://open-campus-codex-sepolia.drpc.org');
+    const provider = new ethers.JsonRpcProvider('https://rpc.open-campus-codex.gelato.digital');
     const certificateContract = new ethers.Contract(
-      '0x663F9d78B3767290A4A3C155eb853d5Ad34F3b9e',
+      '0x3fcC09B2D1023b031FB45317c170C0AB6eFDdaC0',
       require('../../artifacts/contracts/CertificateNFT.sol/CertificateNFT.json').abi,
       provider
     );
