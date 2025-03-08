@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'; // Remove BrowserRouter
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { ethers } from 'ethers';
 import './App.css';
 import CertificateNFT from './CertificateNFT.json';
@@ -23,11 +23,12 @@ function App() {
   const [signer, setSigner] = useState(null);
   const [loginError, setLoginError] = useState(null);
 
-  const navigate = useNavigate(); // Now works because <Router> is in main.jsx
+  const navigate = useNavigate();
 
+  // Initialize Web3 with MetaMask
   useEffect(() => {
     const initWeb3 = async () => {
-      if (window.ethereum) {
+      if (window.ethereum && window.ethereum.isMetaMask) { // Explicitly check for MetaMask
         try {
           const web3Provider = new ethers.BrowserProvider(window.ethereum);
           const web3Signer = await web3Provider.getSigner();
@@ -53,8 +54,9 @@ function App() {
     }
   }, [account, studentData, token]);
 
+  // Connect wallet explicitly to MetaMask
   const connectWallet = async () => {
-    if (!window.ethereum) {
+    if (!window.ethereum || !window.ethereum.isMetaMask) {
       console.error("MetaMask not detected");
       setLoginError('MetaMask not detected. Please install MetaMask to continue.');
       return;
@@ -86,6 +88,7 @@ function App() {
     }
   };
 
+  // Login function
   const login = async ({ email, password }) => {
     setLoginError(null);
     try {
@@ -100,7 +103,6 @@ function App() {
         setToken(data.token);
         setRole(data.user.roleModel);
         setLoginError(null);
-        // Redirect based on role
         if (data.user.roleModel === 'College') {
           console.log('Navigating to /college');
           navigate('/college');
@@ -119,9 +121,35 @@ function App() {
     }
   };
 
+  // Signup function
+  const signup = async ({ email, password, role, secret }) => {
+    setLoginError(null);
+    try {
+      const res = await fetch('http://localhost:3000/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, role, secret })
+      });
+      const data = await res.json();
+      console.log('Signup response:', data);
+      if (res.ok) {
+        setToken(data.token);
+        setRole(data.user.role);
+        setLoginError(null);
+        navigate(data.user.role === 'College' ? '/college' : '/student');
+      } else {
+        setLoginError(data.error || 'Signup failed');
+      }
+    } catch (error) {
+      console.error("Signup error:", error);
+      setLoginError('Network error: ' + error.message);
+    }
+  };
+
   const logout = () => {
     setToken('');
     setRole(null);
+    setAccount('');
     setLoginError(null);
     navigate('/login');
   };
@@ -141,49 +169,53 @@ function App() {
       )
     : null;
 
-    const mintPortfolio = async ({ studentAddress, name, degree, completionDate }) => {
-      if (!portfolioContract) return;
-      try {
-        const res = await fetch('http://localhost:3000/nft/mintPortfolio', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ studentAddress, tokenId: 1, name, degree, completionDate })
-        });
-        if (!res.ok) throw new Error('Failed to mint portfolio on server');
-        const { tokenId, tokenURI, metadata } = await res.json();
-        if (!tokenURI) throw new Error('No tokenURI returned from server');
-        console.log('Minting portfolio, tokenURI:', tokenURI);
+  const mintPortfolio = async ({ studentAddress, name, degree, completionDate, metadata }) => {
+    if (!portfolioContract) return;
+    try {
+      const res = await fetch('http://localhost:3000/nft/mintPortfolio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ studentAddress, tokenId: 1, name, degree, completionDate, metadata })
+      });
+      if (!res.ok) throw new Error('Failed to mint portfolio on server');
+      const { tokenId, tokenURI, metadata: returnedMetadata, txHash } = await res.json();
+      if (!tokenURI) throw new Error('No tokenURI returned from server');
+      console.log('Minting portfolio, tokenURI:', tokenURI);
+      // If the backend mints on-chain, we don't need to call the contract here
+      if (!txHash) {
         const tx = await portfolioContract.mintCertificate(studentAddress, tokenURI);
         await tx.wait();
         console.log('Portfolio minted, tx:', tx.hash);
-        getNFTs();
-      } catch (error) {
-        console.error("Minting error:", error);
-        setLoginError('Failed to mint portfolio: ' + error.message);
+      } else {
+        console.log('Portfolio minted on-chain by backend, tx:', txHash);
       }
-    };
+      getNFTs();
+    } catch (error) {
+      console.error("Minting error:", error);
+      setLoginError('Failed to mint portfolio: ' + error.message);
+    }
+  };
 
-    const mintBadge = async ({ studentAddress, badgeId, metadata, achievement }) => {
-      if (!badgeContract) return;
-      try {
-        const res = await fetch('http://localhost:3000/nft/mintBadge', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ studentAddress, badgeId, metadata, achievement })
-        });
-        if (!res.ok) throw new Error('Failed to mint badge on server');
-        const { badgeId: mintedBadgeId, metadataURI } = await res.json();
-        if (!metadataURI) throw new Error('No metadataURI returned from server');
-        console.log('Minting badge, metadataURI:', metadataURI);
-        const tx = await badgeContract.mintBadge(studentAddress, mintedBadgeId, 1);
-        await tx.wait();
-        console.log('Badge minted, tx:', tx.hash);
-        getNFTs();
-      } catch (error) {
-        console.error("Minting error:", error);
-        setLoginError('Failed to mint badge: ' + error.message);
-      }
-    };
+  const mintBadge = async ({ studentAddress, badgeId, achievement }) => {
+    if (!badgeContract) return;
+    try {
+      const res = await fetch('http://localhost:3000/nft/mintBadge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ studentAddress, badgeId, achievement })
+      });
+      if (!res.ok) throw new Error('Failed to mint badge on server');
+      const { badgeId: returnedBadgeId, metadataURI, metadata } = await res.json();
+      if (!metadataURI) throw new Error('No metadataURI returned from server');
+      console.log('Minting badge, metadataURI:', metadataURI);
+      // Note: The on-chain minting is now handled by the backend, so we don't need to call the contract here
+      console.log('Badge minted, tx:', metadata.txHash); // Log the transaction hash from backend
+      getNFTs();
+    } catch (error) {
+      console.error("Minting badge error:", error);
+      setLoginError('Failed to mint badge: ' + error.message);
+    }
+  };
 
   const getNFTs = async () => {
     if (!token || !account) return;
@@ -225,9 +257,9 @@ function App() {
     let suggestions = [];
 
     const avgQuizScores = {
-      "Data structures": quiz_scores["Data structures"].length ? quiz_scores["Data structures"].reduce((a, b) => a + b, 0) / quiz_scores["Data structures"].length : 0,
-      "Deep learning": quiz_scores["Deep learning"].length ? quiz_scores["Deep learning"].reduce((a, b) => a + b, 0) / quiz_scores["Deep learning"].length : 0,
-      "Blockchain": quiz_scores["Blockchain"].length ? quiz_scores["Blockchain"].reduce((a, b) => a + b, 0) / quiz_scores["Blockchain"].length : 0
+      "Data structures": quiz_scores["Data structures"]?.length ? quiz_scores["Data structures"].reduce((a, b) => a + b, 0) / quiz_scores["Data structures"].length : 0,
+      "Deep learning": quiz_scores["Deep learning"]?.length ? quiz_scores["Deep learning"].reduce((a, b) => a + b, 0) / quiz_scores["Deep learning"].length : 0,
+      "Blockchain": quiz_scores["Blockchain"]?.length ? quiz_scores["Blockchain"].reduce((a, b) => a + b, 0) / quiz_scores["Blockchain"].length : 0
     };
 
     const performanceScore = Math.round((avgQuizScores["Data structures"] + avgQuizScores["Deep learning"] + avgQuizScores["Blockchain"]) / 3);
@@ -251,7 +283,15 @@ function App() {
       <Routes>
         <Route
           path="/login"
-          element={<Login onLogin={login} onConnectWallet={connectWallet} error={loginError} account={account} />}
+          element={
+            <Login
+              onLogin={login}
+              onSignup={signup} // Pass signup function
+              onConnectWallet={connectWallet}
+              error={loginError}
+              account={account}
+            />
+          }
         />
         <Route
           path="/college"

@@ -5,7 +5,6 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 
-// dotenv.config({ path: "../../.env" });
 dotenv.config();
 
 if (!process.env.JWT_SECRET) {
@@ -15,13 +14,28 @@ if (!process.env.JWT_SECRET) {
 
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password, wallet_address, role } = req.body;
+    const { name, email, password, wallet_address, role, secret } = req.body;
+    
+    // Validate required fields
+    if (!name || !email || !password || !wallet_address || !role) {
+      return res.status(400).json({ message: "All fields (name, email, password, wallet_address, role) are required" });
+    }
+
+    // Validate secret for College role
+    if (role === "College" && secret !== "RAUNITISTHEKING") {
+      return res.status(403).json({ message: "Invalid secret key for College registration" });
+    }
+
+    // Check for existing user
     const existingUser = await User.findOne({ $or: [{ email }, { wallet_address }] });
     if (existingUser) {
       return res.status(400).json({ message: "Email or wallet already in use" });
     }
+
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Create role document (Student or College)
     let roleDoc;
     let roleModel;
     if (role === "Student") {
@@ -35,6 +49,7 @@ export const registerUser = async (req, res) => {
     }
     await roleDoc.save();
 
+    // Create user
     const user = new User({
       name,
       email,
@@ -45,6 +60,7 @@ export const registerUser = async (req, res) => {
     });
     await user.save();
 
+    // Generate JWT token
     const token = jwt.sign(
       { userId: user._id, role: roleModel },
       process.env.JWT_SECRET,
