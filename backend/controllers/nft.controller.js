@@ -56,7 +56,7 @@ export const mintPortfolio = [
 
       // Mint on-chain for CertificateNFT
       const provider = new ethers.JsonRpcProvider('https://rpc.open-campus-codex.gelato.digital');
-      const signer = new ethers.Wallet(process.env.COLLEGE_PRIVATE_KEY, provider);
+      const signer = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
       const certificateContract = new ethers.Contract(
         '0x3fcC09B2D1023b031FB45317c170C0AB6eFDdaC0',
         require('../../artifacts/contracts/CertificateNFT.sol/CertificateNFT.json').abi,

@@ -17,8 +17,8 @@ export const registerUser = async (req, res) => {
     const { name, email, password, wallet_address, role, secret } = req.body;
     
     // Validate required fields
-    if (!name || !email || !password || !wallet_address || !role) {
-      return res.status(400).json({ message: "All fields (name, email, password, wallet_address, role) are required" });
+    if (!name || !email || !password ||!role) {
+      return res.status(400).json({ message: "All fields (name, email, password,role) are required" });
     }
 
     // Validate secret for College role
