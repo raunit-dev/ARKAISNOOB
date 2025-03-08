@@ -16,10 +16,8 @@ const certificateSchema = new mongoose.Schema({
 
 const studentSchema = new mongoose.Schema({
 
-  portfolio_token_id: { type: Number, default: null },
-  metamask_wallet_id: { type: String, required: true },
+  metamask_wallet_id: { type: String },
   certificates: [certificateSchema],
-  badges: [badgeSchema],
   course_progress: {
     type: Map,
     of: Number,
