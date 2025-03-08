@@ -28,7 +28,7 @@ export const registerUser = async (req, res) => {
     }
 
     // Check for existing user
-    const existingUser = await User.findOne({ $or: [{ email }, { wallet_address }] });
+    const existingUser = await User.findOne({ $or: [{ email }] });
     if (existingUser) {
       return res.status(400).json({ message: "Email or wallet already in use" });
     }
