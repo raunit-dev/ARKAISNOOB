@@ -17,7 +17,12 @@ const certificateSchema = new mongoose.Schema({
 const studentSchema = new mongoose.Schema({
 
   metamask_wallet_id: { type: String },
-  certificates: [certificateSchema],
+  certificates: [{
+    token_id: String,
+    achievement:String,
+    issue_date: Date,
+    metadata_uri: String,
+  }],
   course_progress: {
     type: Map,
     of: Number,
