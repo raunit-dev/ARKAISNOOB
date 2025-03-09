@@ -33,10 +33,14 @@ const StudentDashboard = () => {
         {/* Student Info */}
         <div className="flex items-center space-x-4 border-b pb-4 border-gray-300">
           <FaUser className="text-4xl text-violet-500" />
-          <div>
-            <h2 className="text-3xl font-bold">{studentData.name}</h2>
-            <p className="text-gray-600">{studentData.email}</p>
-          </div>
+          <div className="text-center md:text-left">
+  <h2 className="text-3xl font-extrabold text-gray-900">{studentData.name}</h2>
+  <p className="text-lg text-gray-600 mt-1">{studentData.email}</p>
+  <p className="text-sm text-gray-500 bg-gray-200 px-3 py-1 rounded-md inline-block mt-2">
+    Wallet: <span className="font-mono text-gray-800">{studentData.wallet_address}</span>
+  </p>
+</div>
+
         </div>
                 {/* Certificates */}
                 <Section title="Certificates" icon={<FaCertificate />}>
@@ -47,7 +51,7 @@ const StudentDashboard = () => {
                 <p className="text-gray-700">Achievement: <span className="font-bold">{certificate.achievement}</span></p>
                 <p className="text-gray-700">Issued On: {new Date(certificate.issue_date).toLocaleDateString()}</p>
                 <a
-                  href={certificate.metadata_uri.replace("ipfs://", "https://ipfs.io/ipfs/")}
+                  href={"https://edu-chain-testnet.blockscout.com/address/0x3fcC09B2D1023b031FB45317c170C0AB6eFDdaC0"}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-violet-500 underline"
