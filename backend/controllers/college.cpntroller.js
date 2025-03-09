@@ -10,7 +10,7 @@ const getStudentDetails = async (req, res) => {
             return res.status(400).json({ message: "Email is required" });
         }
 
-        const user = await User.findOne({ email: s_email });
+        const user = await User.findOne({ _id: s_email });
 
         if (!user) {
             return res.status(404).json({ message: "Student not found" });
@@ -91,7 +91,26 @@ const savedeiteddetails = async (req, res) => {
 
 //get college deatils
 const getCollegeDetails = async (req, res) => {
-    
+    try {
+        const { s_email } = req.body;
+
+        if (!s_email) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+
+        const user = await User.findOne({ email: s_email });
+
+        if (!user) {
+            return res.status(404).json({ message: "Student not found" });
+        }
+
+        await user.populate('role');
+
+        res.status(200).json({ user });
+    } catch (error) {
+        console.error("Error fetching student details:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
 }
 
 export {getCollegeDetails, getStudentDetails, savedeiteddetails}
