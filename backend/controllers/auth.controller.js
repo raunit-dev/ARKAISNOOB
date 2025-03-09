@@ -40,7 +40,7 @@ export const registerUser = async (req, res) => {
     let roleDoc;
     let roleModel;
     if (role === "Student") {
-      roleDoc = new Student({ portfolio_token_id: null, badges: [] });
+      roleDoc = new Student({ portfolio_token_id: null, badges: [], metamask_wallet_id:wallet_address });
       roleModel = "Student";
     } else if (role === "College") {
       roleDoc = new College({ college_name: name });
