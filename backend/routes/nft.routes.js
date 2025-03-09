@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post('/mintPortfolio', mintPortfolio);
 router.get('/getNFTs/:wallet', getNFTs);
-router.get('/verify/:type/:id/:address', verifyNFT);
+router.get('/verify/:tokenId/:walletAddress', verifyNFT);
 
 const nftRoutes = router;
 

@@ -5,6 +5,7 @@ import LoginSignup from './components/Auth/AuthComp'
 import CollegeDashboard from './components/DashBoarrd/CollegeDashBoard'
 import StudentDashboard from './components/DashBoarrd/StudentDashboard'
 import GenerateCertificate from './components/CertificateGen/GenerateCert'
+import VerifyCertificate from './components/CertificateVer/VerifyCertificate'
 const App = () => {
   return (
     <BrowserRouter>
@@ -14,6 +15,7 @@ const App = () => {
             <Route path='/college' element={<CollegeDashboard/>} />
             <Route path='/student' element={<StudentDashboard/>} />
             <Route path='/generate/:walletid' element={<GenerateCertificate/>} />
+            <Route path='/verifyNFT' element={<VerifyCertificate/>}/>
         </Routes>
     </BrowserRouter>
     )

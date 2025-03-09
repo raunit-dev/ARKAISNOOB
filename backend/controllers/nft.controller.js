@@ -685,19 +685,37 @@ export const getNFTs = [
 // Verify a Certificate NFT
 export const verifyNFT = async (req, res) => {
   const { id, address } = req.params;
+
+  // Validate inputs
+  if (!ethers.utils.isAddress(address)) {
+    return res.status(400).json({ error: "Invalid wallet address" });
+  }
+  if (!/^\d+$/.test(id)) {
+    return res.status(400).json({ error: "Invalid token ID" });
+  }
+
   try {
-    const provider = new ethers.JsonRpcProvider('https://rpc.open-campus-codex.gelato.digital');
+    const provider = new ethers.providers.JsonRpcProvider('https://rpc.open-campus-codex.gelato.digital');
     const certificateContract = new ethers.Contract(
-      '0x3fcC09B2D1023b031FB45317c170C0AB6eFDdaC0',
-      require('../../artifacts/contracts/CertificateNFT.sol/CertificateNFT.json').abi,
+      '0x3fcC09B2D1023b031FB45317c170C0AB6eFDdaC0', // Replace with your deployed contract address
+      abi,
       provider
     );
+
+    // Fetch owner of the token
     const owner = await certificateContract.ownerOf(id);
     const uri = await certificateContract.tokenURI(id);
+
+    // Compare owner with provided address (case-insensitive)
     const verified = owner.toLowerCase() === address.toLowerCase();
+
     res.json({ verified, uri });
   } catch (error) {
     console.error('Verify Certificate Error:', error);
-    res.status(500).json({ error: 'Failed to verify certificate: ' + error.message });
+    if (error.reason === "ERC721: owner query for nonexistent token") {
+      res.status(404).json({ error: "Token ID does not exist" });
+    } else {
+      res.status(500).json({ error: 'Failed to verify certificate: ' + error.message });
+    }
   }
 };

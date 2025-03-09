@@ -7,7 +7,7 @@ import BadgeNFT from './BadgeNFT.json';
 import Login from './components/Login';
 import CollegeDashboard from './components/CollegeDashboard';
 import StudentDashboard from './components/StudentDashboard';
-import VerifyNFT from './components/VerifyNFT';
+import VerifyCertificate from './components/CertificateVer/VerifyCertificate';
 import StudentDetails from './components/StudentDetails';
 
 function App() {
@@ -239,7 +239,7 @@ function App() {
     }
   };
 
-  const verifyNFT = async ({ type, id, address }) => {
+  const VerifyCertificate = async ({ type, id, address }) => {
     try {
       const res = await fetch(`http://localhost:3000/nft/verify/${type}/${id}/${address}`);
       setVerifyResult(await res.json());
@@ -330,7 +330,7 @@ function App() {
             )
           }
         />
-        <Route path="/viewer" element={<VerifyNFT onVerify={verifyNFT} />} />
+        <Route path="/viewer" element={<VerifyCertificate onVerify={VerifyCertificate} />} />
         <Route path="*" element={<Navigate to="/login" />} />
       </Routes>
       {verifyResult && (
